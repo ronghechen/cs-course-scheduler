@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import Modal from './modal';
 // Types
 type Course = {
   term: string;
@@ -105,6 +105,7 @@ const App = () => {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [term, setTerm] = useState('Fall');
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -136,19 +137,56 @@ const App = () => {
       ...course,
     })
   );
-
+  const selectedCourseList = courses.filter(c => selectedCourses.includes(c.id));
   return (
     <main className="min-h-screen bg-white p-6">
       <h1 className="mb-8 text-4xl font-bold text-black">{schedule.title}</h1>
 
-      <TermSelector selection={term} setSelection={setTerm} />
-
+      <div className="flex items-center justify-between mb-4">
+        <TermSelector selection={term} setSelection={setTerm} />
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="rounded-md border border-gray-400 px-4 py-2 font-bold hover:bg-gray-100 transition-colors"
+        >
+          Course Plan
+        </button>
+      </div>
       <CourseList
         courses={courses}
         term={term}
         selectedCourses={selectedCourses}
         toggleSelectedCourse={toggleSelectedCourse}
       />
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <div className="py-2">
+          {selectedCourseList.length > 0 ? (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Your Course Plan</h2>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {selectedCourseList.map(course => (
+                  <div key={course.id} className="border-b pb-2">
+                    <p className="font-bold text-lg">CS {course.number}: {course.title}</p>
+                    <p className="text-gray-600">{course.meets}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-6">
+              <h2 className="text-xl font-bold mb-2">Schedule is empty</h2>
+              <p className="text-gray-600">
+                Please click on course cards to select the classes you'd like to take.
+              </p>
+            </div>
+          )}
+          <button 
+            onClick={() => setIsModalOpen(false)}
+            className="w-full mt-6 rounded bg-blue-600 py-2 text-white font-bold hover:bg-blue-700"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
     </main>
   );
 };
