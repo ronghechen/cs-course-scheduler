@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Modal from './modal';
+import { courseConflictsWithSelected } from './utils/TimeConflicts';
 // Types
 type Course = {
   term: string;
@@ -53,7 +54,7 @@ const CourseList = ({
 }: {
   courses: CourseWithId[];
   term: string;
-  selectedCourses: string[];
+  selectedCourses: CourseWithId[]; // Compare Meeting times
   toggleSelectedCourse: (courseId: string) => void;
 }) => {
   const filteredCourses = courses.filter((course) => course.term === term);
@@ -61,15 +62,26 @@ const CourseList = ({
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {filteredCourses.map((course) => {
-        const isSelected = selectedCourses.includes(course.id);
-
+        // Determine whether this specific course is already selected
+        const isSelected = selectedCourses.some((c) => c.id === course.id);
+        // Has Conflict
+        const hasConflict = !isSelected && courseConflictsWithSelected(course, selectedCourses);
         return (
           <button
             key={course.id}
-            onClick={() => toggleSelectedCourse(course.id)}
+            onClick={() => {
+              // Conflict
+              if (!hasConflict || isSelected) {
+                toggleSelectedCourse(course.id);
+              }
+            }}
+            //Disable only unselected conflicting courses
+            disabled={hasConflict && !isSelected}
             className={`flex min-h-[320px] flex-col justify-between rounded-2xl border p-6 text-left shadow-sm transition ${
               isSelected
                 ? 'border-blue-600 bg-blue-100 ring-2 ring-blue-400'
+                : hasConflict
+                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-50' 
                 : 'border-gray-300 bg-white hover:bg-gray-50'
             }`}
           >
@@ -78,11 +90,17 @@ const CourseList = ({
                 <h2 className="text-3xl font-medium text-black">
                   {course.term} CS {course.number}
                 </h2>
-                {isSelected && (
+                {isSelected ? (
                   <span className="text-2xl" aria-label="selected">
                     ✓
                   </span>
-                )}
+
+                ) : hasConflict ? (
+                  // Show an X for courses blocked by time conflict
+                  <span className="text-2xl" aria-label="time conflict">
+                    ✕
+                  </span>
+                ) : null}
               </div>
 
               <p className="text-2xl leading-relaxed text-black">
@@ -137,7 +155,9 @@ const App = () => {
       ...course,
     })
   );
-  const selectedCourseList = courses.filter(c => selectedCourses.includes(c.id));
+
+  const selectedCourseList = courses.filter((c) => selectedCourses.includes(c.id));
+
   return (
     <main className="min-h-screen bg-white p-6">
       <h1 className="mb-8 text-4xl font-bold text-black">{schedule.title}</h1>
@@ -154,7 +174,7 @@ const App = () => {
       <CourseList
         courses={courses}
         term={term}
-        selectedCourses={selectedCourses}
+        selectedCourses={selectedCourseList}
         toggleSelectedCourse={toggleSelectedCourse}
       />
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
