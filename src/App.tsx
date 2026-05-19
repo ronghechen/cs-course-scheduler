@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
 import Modal from './modal';
 import { courseConflictsWithSelected } from './utils/TimeConflicts';
 // Types
@@ -111,6 +112,14 @@ const CourseList = ({
             <div>
               <hr className="mb-6 border-gray-300" />
               <p className="text-2xl text-black">{course.meets}</p>
+              <Link
+              to="/courses/$courseId/edit"
+              params={{ courseId: course.id }}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-center font-bold text-white hover:bg-blue-700"
+            >
+              Edit
+            </Link>
             </div>
           </button>
         );
