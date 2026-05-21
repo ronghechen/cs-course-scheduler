@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-
-type Course = {
-  term: string;
-  number: string;
-  meets: string;
-  title: string;
-};
+import {
+  useForm,
+  type UseFormTrigger,
+  type SubmitHandler,
+  type SubmitErrorHandler,
+} from 'react-hook-form';
+import { courseResolver, type Course } from '../types/courses';
 
 type Schedule = {
   title: string;
@@ -34,46 +34,88 @@ function CourseForm() {
     fetchCourse();
   }, [courseId]);
 
-  if (!course) {
-    return <p className="p-6">Loading...</p>;
-  }
+  if (!course) return <p className="p-6">Loading...</p>;
+
+  return <CourseEditor course={course} onCancel={() => navigate({ to: '/' })} />;
+}
+
+function CourseEditor({
+  course,
+  onCancel,
+}: {
+  course: Course;
+  onCancel: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    formState: { errors },
+  } = useForm<Course>({
+    defaultValues: course,
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    criteriaMode: 'all',
+    resolver: courseResolver,
+  });
+
+  const onSubmit: SubmitHandler<Course> = () => {};
+
+  const onError: SubmitErrorHandler<Course> = () => {};
 
   return (
     <main className="min-h-screen bg-white p-6">
       <form
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={handleSubmit(onSubmit, onError)}
         className="mx-auto max-w-xl rounded-2xl border p-6 shadow"
       >
-        <h1 className="mb-6 text-3xl font-bold">
-          Edit CS {course.number}
-        </h1>
+        <h1 className="mb-6 text-3xl font-bold">Edit CS {course.number}</h1>
 
-        <label className="mb-4 block">
-          <span className="mb-2 block font-bold">Title</span>
-          <input
-            type="text"
-            defaultValue={course.title}
-            className="w-full rounded border px-3 py-2"
-          />
-        </label>
-
-        <label className="mb-6 block">
-          <span className="mb-2 block font-bold">Meeting Times</span>
-          <input
-            type="text"
-            defaultValue={course.meets}
-            className="w-full rounded border px-3 py-2"
-          />
-        </label>
+        <CourseField name="title" label="Title" errors={errors} register={register} trigger={trigger}/>
+        <CourseField name="term" label="Term" errors={errors} register={register} trigger={trigger}/>
+        <CourseField name="number" label="Course Number" errors={errors} register={register} trigger={trigger}/>
+        <CourseField name="meets" label="Meeting Times" errors={errors} register={register} trigger={trigger}/>
 
         <button
           type="button"
-          onClick={() => navigate({ to: '/' })}
-          className="rounded bg-gray-700 px-4 py-2 font-bold text-white hover:bg-gray-800"
+          onClick={onCancel}
+          className="mt-6 rounded bg-gray-700 px-4 py-2 font-bold text-white hover:bg-gray-800"
         >
           Cancel
         </button>
       </form>
     </main>
+  );
+}
+
+type CourseFieldProps = {
+  name: keyof Course;
+  label: string;
+  errors: any;
+  register: any;
+  trigger: UseFormTrigger<Course>;
+};
+
+function CourseField({ name, label, errors, register }: CourseFieldProps) {
+  return (
+    <label className="mb-4 block">
+      <p className="mb-2 font-bold">
+        {label}
+        {errors[name] && (
+          <span className="pl-2 text-sm italic text-red-500">
+            {errors[name]?.message}
+          </span>
+        )}
+      </p>
+
+      <input
+        {...register(name, {
+          onChange: () => trigger(name),
+        })}
+        className={`w-full rounded border px-3 py-2 ${
+          errors[name] ? 'border-red-500' : 'border-gray-400'
+        }`}
+      />
+    </label>
   );
 }
