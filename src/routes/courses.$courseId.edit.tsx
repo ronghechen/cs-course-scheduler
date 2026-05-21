@@ -96,7 +96,7 @@ type CourseFieldProps = {
   trigger: UseFormTrigger<Course>;
 };
 
-function CourseField({ name, label, errors, register }: CourseFieldProps) {
+function CourseField({ name, label, errors, register, trigger }: CourseFieldProps) {
   return (
     <label className="mb-4 block">
       <p className="mb-2 font-bold">
